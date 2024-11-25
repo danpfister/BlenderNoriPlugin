@@ -194,6 +194,29 @@ class NoriWriter:
                     color[2] *=power
                     pointLight.appendChild(self.__createEntry("color", "power", "%f,%f,%f"%(color[0], color[1], color[2])))
                     self.scene.appendChild(pointLight)
+                elif(source.data.type == "SPOT"):
+                    spotLight = self.__createElement("emitter", {"type" : "spot"})
+
+                    pos = source.location
+                    spotLight.appendChild(self.__createEntry("point", "position", "%f,%f,%f"%(pos.x,pos.y,pos.z)))
+
+                    dir =  source.matrix_world.to_quaternion() @ Vector((0.0, 0.0, -1.0))
+                    spotLight.appendChild(self.__createEntry("vector", "direction", "%f,%f,%f"%(dir.x,dir.y,dir.z)))
+
+                    power = source.data.energy
+                    color = list(source.data.color).copy()
+                    color[0] *=power
+                    color[1] *=power
+                    color[2] *=power
+                    spotLight.appendChild(self.__createEntry("color", "power", "%f,%f,%f"%(color[0], color[1], color[2])))
+
+                    cutoff_angle = source.data.spot_size / 2 # radians
+                    spotLight.appendChild(self.__createEntry("float", "cutoff_angle", "%f"%cutoff_angle))
+
+                    falloff_angle = cutoff_angle * (1 - source.data.spot_blend) # also radians
+                    spotLight.appendChild(self.__createEntry("float", "falloff_angle", "%f"%falloff_angle))
+
+                    self.scene.appendChild(spotLight)
                 else:
                     self.verbose("WARN: Light source type (%s) is not supported" % source.data.type)
 

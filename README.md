@@ -10,7 +10,7 @@ To use it, copy the file 'io_nori.py' into the addons/ folder of your blender in
 
 - Only "visible" objects are exported, so by switching the eye icon of your objects on/off you can decide what to export.
 - Object instances are also supported. The exporter silently unrolls the instances into a single mesh, exports it and sets it back to the state before.
-- By enabling the option "Export lights", the exporter will export : Point Lights as point lights and Objects with a "Emission" BSDF as area lights. Thus, you can export mesh area lights to Nori. Note: For now Blender area lights are not exported (they only support simple geometry). When "Export lights" is selected, the default integrator is "path_mis", otherwise "normals".
+- By enabling the option "Export lights", the exporter will export : Point Lights as point lights, Spot Lights as spot lights and Objects with a "Emission" BSDF as area lights. Thus, you can export mesh area lights to Nori. Note: For now Blender area lights are not exported (they only support simple geometry). When "Export lights" is selected, the default integrator is "path_mis", otherwise "normals".
 - By enabling the option "Export BSDF properties", the exporter will export the mesh and add a translated BSDF entry to the xml file for this object (multiple materials for different faces of a single object are also supported). Otherwise, a diffuse BSDF with the viewport color of the object is added to the XML. The following translations are currently available:
     - Principled BSDF -> disney
     - Diffuse BSDF -> diffuse
