@@ -80,6 +80,7 @@ class NoriWriter:
         self.filepath = filepath
         self.workingDir = os.path.dirname(self.filepath)
         self.export_textures = False
+        self.export_true_spheres = False
 
     ######################
     # tools private methods
@@ -265,6 +266,14 @@ class NoriWriter:
         if not self.export_meshes_world:
             meshElement.appendChild(self.__createTransform(matrix))
         return meshElement
+    
+    def __createSphereEntry(self, pos, scale, matrix):
+        meshElement = self.__createElement("mesh", {"type" : "sphere"})
+        meshElement.appendChild(self.__createEntry("point", "center", "%f,%f,%f"%(pos.x,pos.y,pos.z)))
+        meshElement.appendChild(self.__createEntry("float", "radius", "%f"%scale.x))
+        if not self.export_meshes_world:
+            meshElement.appendChild(self.__createTransform(matrix))
+        return meshElement
 
     def __createBSDFEntry(self, slot, exportMaterialColor):
         """method responsible to the auto-conversion
@@ -326,12 +335,13 @@ class NoriWriter:
 
         return bsdfElement
 
-    def write_mesh(self,mesh, exportMeshLights, exportMaterialColor, progress):
+    def write_mesh(self, mesh, exportMeshLights, exportMaterialColor, progress):
+        isSphere = 'Sphere' in mesh.name
         if mesh.type in SUPPORTED_OBJECT_TYPES and mesh.type != "EMPTY":
-            for meshEntry in self.write_mesh_objs(mesh, exportMeshLights, exportMaterialColor, progress):
+            for meshEntry in self.write_mesh_objs(mesh, exportMeshLights, exportMaterialColor, progress, isSphere):
                 self.scene.appendChild(meshEntry)
 
-    def write_mesh_objs(self, mesh, exportMeshLights, exportMaterialColor, progress):
+    def write_mesh_objs(self, mesh, exportMeshLights, exportMaterialColor, progress, isSphere=False):
 
         # We check if the object has any other instances, and if so create a temporary joined object.
         mesh, created_instance_ob = join_instances(self.context, mesh)
@@ -346,22 +356,23 @@ class NoriWriter:
 
         # write_file export by default meshes in world coordinates, we transform back to local coordinate.
         world_to_local = mesh.matrix_world.copy().inverted_safe()
-
-        # We use the official .obj export scripts, modified to our needs
-        progress.enter_substeps(1)
-        io_scene_obj.export_obj.write_file(self.workingDir+"/meshes/"+fileObjPath, [mesh], self.depsgraph, self.scene, 
-                    progress=progress,
-                    EXPORT_NORMALS=True,
-                    EXPORT_UV=True,
-                    EXPORT_TRI=self.export_triangular,
-                    EXPORT_GROUP_BY_MAT=True,
-                    EXPORT_GROUP_BY_OB = False,
-                    EXPORT_APPLY_MODIFIERS=True,
-                    EXPORT_CURVE_AS_NURBS=True,
-                    EXPORT_MTL=True,
-                    EXPORT_KEEP_VERT_ORDER=False,
-                    EXPORT_GLOBAL_MATRIX=world_to_local if not self.export_meshes_world else None)
-        progress.leave_substeps()
+        
+        if not (isSphere and self.export_true_spheres):
+            # We use the official .obj export scripts, modified to our needs
+            progress.enter_substeps(1)
+            io_scene_obj.export_obj.write_file(self.workingDir+"/meshes/"+fileObjPath, [mesh], self.depsgraph, self.scene, 
+                        progress=progress,
+                        EXPORT_NORMALS=True,
+                        EXPORT_UV=True,
+                        EXPORT_TRI=self.export_triangular,
+                        EXPORT_GROUP_BY_MAT=True,
+                        EXPORT_GROUP_BY_OB = False,
+                        EXPORT_APPLY_MODIFIERS=True,
+                        EXPORT_CURVE_AS_NURBS=True,
+                        EXPORT_MTL=True,
+                        EXPORT_KEEP_VERT_ORDER=False,
+                        EXPORT_GLOBAL_MATRIX=world_to_local if not self.export_meshes_world else None)
+            progress.leave_substeps()
         # if added_uv:
         #     mesh.data.uv_layers.remove(mesh.data.uv_layers['DefaultUvMap'])
         #     dg = bpy.context.evaluated_depsgraph_get()
@@ -370,7 +381,10 @@ class NoriWriter:
         listMeshXML = []
         if(not haveMaterial):
             # add default BSDF
-            meshElement = self.__createMeshEntry(fileObjPath, mesh.matrix_world)
+            if isSphere:
+                meshElement = self.__createSphereEntry(mesh.location, mesh.scale, mesh.matrix_world)
+            else:
+                meshElement = self.__createMeshEntry(fileObjPath, mesh.matrix_world)
             bsdfElement = self.__createElement("bsdf", {"type":"diffuse"})
             bsdfElement.appendChild(self.__createEntry("color", "albedo", "0.75,0.75,0.75"))
             meshElement.appendChild(bsdfElement)
@@ -379,29 +393,34 @@ class NoriWriter:
             for id_mat in range(len(mesh.material_slots)):
                 slot = mesh.material_slots[id_mat]
                 self.verbose("MESH: "+mesh.name+" BSDF: "+slot.name)
-
-                # we create an new obj file and concatenate data files
-                fileObjMatPath = name_compat(mesh.name)+"_"+name_compat(slot.name)+".obj"
-                fileObj = open(self.workingDir+"/meshes/"+fileObjPath,"r")
-                fileObjMat = open(self.workingDir+"/meshes/"+fileObjMatPath,"w")
                 
-                # We only take faces that are associated to this material
-                do_copy = True
-                for line in fileObj:
-                    if (line.startswith("g")):
-                        if not line.startswith("g " + name_compat(mesh.name)+"_"+name_compat(mesh.data.name)+"_"+name_compat(slot.name)):
-                            do_copy=False
-                        else:
-                            do_copy=True
-                    if (do_copy):
-                        fileObjMat.write(line)
+                if not isSphere:
+                    # we create an new obj file and concatenate data files
+                    fileObjMatPath = name_compat(mesh.name)+"_"+name_compat(slot.name)+".obj"
+                    fileObj = open(self.workingDir+"/meshes/"+fileObjPath,"r")
+                    fileObjMat = open(self.workingDir+"/meshes/"+fileObjMatPath,"w")
+                
+                    # We only take faces that are associated to this material
+                    do_copy = True
+                    for line in fileObj:
+                        if (line.startswith("g")):
+                            if not line.startswith("g " + name_compat(mesh.name)+"_"+name_compat(mesh.data.name)+"_"+name_compat(slot.name)):
+                                do_copy=False
+                            else:
+                                do_copy=True
+                        if (do_copy):
+                            fileObjMat.write(line)
 
                 # We create xml related entry
-                meshElement = self.__createMeshEntry(fileObjMatPath, mesh.matrix_world)
+                if isSphere:
+                    meshElement = self.__createSphereEntry(mesh.location, mesh.scale, mesh.matrix_world)
+                else:
+                    meshElement = self.__createMeshEntry(fileObjMatPath, mesh.matrix_world)
                 meshElement.appendChild(self.__createBSDFEntry(slot, exportMaterialColor))
 
-                fileObjMat.close()
-                fileObj.close()
+                if not isSphere:
+                    fileObjMat.close()
+                    fileObj.close()
                 # Check for emissive surfaces
                 node_tree = slot.material.node_tree
 
@@ -425,8 +444,9 @@ class NoriWriter:
                 listMeshXML.append(meshElement)
 
             # Clean temporal obj file: outcommented since the combined and grouped output might be usable
-            if len(mesh.material_slots) <= 1:
-               os.remove(self.workingDir+"/meshes/"+fileObjPath)
+            if not isSphere:
+                if len(mesh.material_slots) <= 1:
+                   os.remove(self.workingDir+"/meshes/"+fileObjPath)
 
         # free the memory
         # bpy.data.meshes.remove(mesh.data)
@@ -482,6 +502,11 @@ class NoriExporter(bpy.types.Operator, ExportHelper):
                     name="Triangular Mesh",
                     description="Convert faces to triangles.",
                     default=False)
+    
+    export_true_spheres = BoolProperty(
+                    name="True Spheres",
+                    description="Export Sphere meshes as Spheres instead of Generic Objects.",
+                    default=False)
 
     nb_samples = IntProperty(name="Numbers of camera rays",
                     description="Number of camera ray",
@@ -495,6 +520,7 @@ class NoriExporter(bpy.types.Operator, ExportHelper):
         nori.setExportMeshesWorld(self.export_meshes_in_world)
         nori.export_triangular = self.export_meshes_triangular
         nori.export_textures = self.export_textures
+        nori.export_true_spheres = self.export_true_spheres
         nori.write(self.export_light, self.export_material_colors, self.nb_samples)
         return {'FINISHED'}
 
