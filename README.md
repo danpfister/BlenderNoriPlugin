@@ -21,6 +21,7 @@ To use it, copy the file 'io_nori.py' into the addons/ folder of your blender in
 - By enabling the option "Export textures", the exporter adds a texture to your BSDF entry if available. Note that only image textures are supported atm. If no texture is found, the default BSDF color is exported. To use this feature, add an Image Texture Node and connect it to the "Color" or "Base Color" socket of your object. The path to the image will be copied relative to the blender file for now, so if you want to use the output right away save the XML in the same folder as the blender file.
 - The checkbox "Export OBJ in world coords" defines how your obj files are exported: If enabled, we export the mesh in world coordinates of Blender. Otherwise, we export the mesh in local coordinates and add a toWorld transform to the XML entry.
 - The checkbox "Triangular Mesh" exports all your meshes as triangular meshes. This is helpful if your mesh has complex polygons that Nori does not support. Note that after this export your mesh in Blender stays triangular.
+- The checkbox "True Spheres" defines all meshes with "Sphere" in their name as a sphere with infinite faces in the XML, instead of creating an .obj file.
 - The "Number of Camera Rays" input box sets the sampleCount parameter of your sampler.
 
 ## Disclaimer
