@@ -381,7 +381,7 @@ class NoriWriter:
         listMeshXML = []
         if(not haveMaterial):
             # add default BSDF
-            if isSphere:
+            if isSphere and self.export_true_spheres:
                 meshElement = self.__createSphereEntry(mesh.location, mesh.scale, mesh.matrix_world)
             else:
                 meshElement = self.__createMeshEntry(fileObjPath, mesh.matrix_world)
@@ -394,7 +394,7 @@ class NoriWriter:
                 slot = mesh.material_slots[id_mat]
                 self.verbose("MESH: "+mesh.name+" BSDF: "+slot.name)
                 
-                if not isSphere:
+                if not (isSphere and self.export_true_spheres):
                     # we create an new obj file and concatenate data files
                     fileObjMatPath = name_compat(mesh.name)+"_"+name_compat(slot.name)+".obj"
                     fileObj = open(self.workingDir+"/meshes/"+fileObjPath,"r")
@@ -412,14 +412,16 @@ class NoriWriter:
                             fileObjMat.write(line)
 
                 # We create xml related entry
-                if isSphere:
+                if isSphere and self.export_true_spheres:
                     meshElement = self.__createSphereEntry(mesh.location, mesh.scale, mesh.matrix_world)
                 else:
                     meshElement = self.__createMeshEntry(fileObjMatPath, mesh.matrix_world)
                 meshElement.appendChild(self.__createBSDFEntry(slot, exportMaterialColor))
 
-                if not isSphere:
+                if fileObjMat:
                     fileObjMat.close()
+                
+                if fileObj:
                     fileObj.close()
                 # Check for emissive surfaces
                 node_tree = slot.material.node_tree
