@@ -314,7 +314,7 @@ class NoriWriter:
         elif (principled and exportMaterialColor):
             c = principled.inputs["Base Color"].default_value
             bsdfElement = self.__createElement("bsdf", {"type":"disney", "name" : slot.material.name})
-            bsdfElement.appendChild(self.__createColorOrTexture("baseColor", principled.inputs["Base Color"]))
+            bsdfElement.appendChild(self.__createColorOrTexture("albedo", principled.inputs["Base Color"]))
             bsdfElement.appendChild(self.__createEntry("float", "metallic","%f" %(principled.inputs["Metallic"].default_value)))
             bsdfElement.appendChild(self.__createEntry("float", "subsurface","%f" %(principled.inputs["Subsurface"].default_value)))
             bsdfElement.appendChild(self.__createEntry("float", "specular","%f" %(principled.inputs["Specular"].default_value)))
