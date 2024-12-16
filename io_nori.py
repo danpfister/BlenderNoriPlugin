@@ -107,6 +107,7 @@ class NoriWriter:
                 if (linked_nodes[0].from_node.bl_label == "Image Texture"):
                     texture = self.__createElement("texture",{"type":"image_texture", "name":name})
                     texture.appendChild(self.__createEntry("string","filename", linked_nodes[0].from_node.image.filepath.replace("\\","/")))
+                    texture.appendChild(self.__createEntry("vector", "scale", "%f %f" % (1, 1)))
                     texture.appendChild(self.__createEntry("string","interpolation", linked_nodes[0].from_node.interpolation))
                     texture.appendChild(self.__createEntry("string","extension", linked_nodes[0].from_node.extension))
                     texture.appendChild(self.__createEntry("string","projection", linked_nodes[0].from_node.projection))
@@ -381,7 +382,7 @@ class NoriWriter:
         listMeshXML = []
         if(not haveMaterial):
             # add default BSDF
-            if isSphere:
+            if isSphere and self.export_true_spheres:
                 meshElement = self.__createSphereEntry(mesh.location, mesh.scale, mesh.matrix_world)
             else:
                 meshElement = self.__createMeshEntry(fileObjPath, mesh.matrix_world)
@@ -394,7 +395,7 @@ class NoriWriter:
                 slot = mesh.material_slots[id_mat]
                 self.verbose("MESH: "+mesh.name+" BSDF: "+slot.name)
                 
-                if not isSphere:
+                if not (isSphere and self.export_true_spheres):
                     # we create an new obj file and concatenate data files
                     fileObjMatPath = name_compat(mesh.name)+"_"+name_compat(slot.name)+".obj"
                     fileObj = open(self.workingDir+"/meshes/"+fileObjPath,"r")
@@ -412,15 +413,16 @@ class NoriWriter:
                             fileObjMat.write(line)
 
                 # We create xml related entry
-                if isSphere:
+                if isSphere and self.export_true_spheres:
                     meshElement = self.__createSphereEntry(mesh.location, mesh.scale, mesh.matrix_world)
                 else:
                     meshElement = self.__createMeshEntry(fileObjMatPath, mesh.matrix_world)
                 meshElement.appendChild(self.__createBSDFEntry(slot, exportMaterialColor))
 
-                if not isSphere:
+                if not (isSphere and self.export_true_spheres):
                     fileObjMat.close()
                     fileObj.close()
+
                 # Check for emissive surfaces
                 node_tree = slot.material.node_tree
 
