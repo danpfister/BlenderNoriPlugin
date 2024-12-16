@@ -107,6 +107,7 @@ class NoriWriter:
                 if (linked_nodes[0].from_node.bl_label == "Image Texture"):
                     texture = self.__createElement("texture",{"type":"image_texture", "name":name})
                     texture.appendChild(self.__createEntry("string","filename", linked_nodes[0].from_node.image.filepath.replace("\\","/")))
+                    texture.appendChild(self.__createEntry("vector", "scale", "%f %f" % (1, 1)))
                     texture.appendChild(self.__createEntry("string","interpolation", linked_nodes[0].from_node.interpolation))
                     texture.appendChild(self.__createEntry("string","extension", linked_nodes[0].from_node.extension))
                     texture.appendChild(self.__createEntry("string","projection", linked_nodes[0].from_node.projection))
