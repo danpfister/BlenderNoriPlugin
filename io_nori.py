@@ -418,11 +418,10 @@ class NoriWriter:
                     meshElement = self.__createMeshEntry(fileObjMatPath, mesh.matrix_world)
                 meshElement.appendChild(self.__createBSDFEntry(slot, exportMaterialColor))
 
-                if fileObjMat:
+                if not (isSphere and self.export_true_spheres):
                     fileObjMat.close()
-                
-                if fileObj:
                     fileObj.close()
+
                 # Check for emissive surfaces
                 node_tree = slot.material.node_tree
 
