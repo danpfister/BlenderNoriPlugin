@@ -212,7 +212,7 @@ class NoriWriter:
                     color[2] *=power
                     spotLight.appendChild(self.__createEntry("color", "power", "%f,%f,%f"%(color[0], color[1], color[2])))
 
-                    cutoff_angle = source.data.spot_size / 2 # radians
+                    cutoff_angle = 180 * (source.data.spot_size / 2) / (2 * 3.1415) # radians
                     spotLight.appendChild(self.__createEntry("float", "cutoff_angle", "%f"%cutoff_angle))
 
                     falloff_angle = cutoff_angle * (1 - source.data.spot_blend) # also radians
