@@ -212,7 +212,7 @@ class NoriWriter:
                     color[2] *=power
                     spotLight.appendChild(self.__createEntry("color", "power", "%f,%f,%f"%(color[0], color[1], color[2])))
 
-                    cutoff_angle = source.data.spot_size / 2 # radians
+                    cutoff_angle = 180 * (source.data.spot_size / 2) / (2 * 3.1415) # radians
                     spotLight.appendChild(self.__createEntry("float", "cutoff_angle", "%f"%cutoff_angle))
 
                     falloff_angle = cutoff_angle * (1 - source.data.spot_blend) # also radians
@@ -314,7 +314,7 @@ class NoriWriter:
         elif (principled and exportMaterialColor):
             c = principled.inputs["Base Color"].default_value
             bsdfElement = self.__createElement("bsdf", {"type":"disney", "name" : slot.material.name})
-            bsdfElement.appendChild(self.__createColorOrTexture("baseColor", principled.inputs["Base Color"]))
+            bsdfElement.appendChild(self.__createColorOrTexture("albedo", principled.inputs["Base Color"]))
             bsdfElement.appendChild(self.__createEntry("float", "metallic","%f" %(principled.inputs["Metallic"].default_value)))
             bsdfElement.appendChild(self.__createEntry("float", "subsurface","%f" %(principled.inputs["Subsurface"].default_value)))
             bsdfElement.appendChild(self.__createEntry("float", "specular","%f" %(principled.inputs["Specular"].default_value)))
